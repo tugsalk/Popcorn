@@ -10,7 +10,8 @@ using TMDbLib.Client;
 using TMDbLib.Objects.Movies;
 using ScrapySharp.Network;
 using ScrapySharp.Extensions;
-
+using Newtonsoft.Json;
+using System.IO;
 
 namespace Popcorn.Controllers
 {
@@ -27,8 +28,8 @@ namespace Popcorn.Controllers
         [HttpPost]
         public object SearchMovie(string title)
         {
-            var movie = client.SearchMovie(title).Results.OrderByDescending(p => p.ReleaseDate.Value).ToList().Count > 0 ? client.SearchMovie(title).Results.OrderByDescending(p => p.ReleaseDate.Value).FirstOrDefault() : null;
-
+            var movie = client.SearchMovie(title).Results.ToList().Count > 0 ? client.SearchMovie(title).Results.FirstOrDefault() : null;
+            
             if (movie != null)
                 return client.GetMovie(movie.Id);
             else
@@ -36,24 +37,31 @@ namespace Popcorn.Controllers
         }
 
         [HttpPost]
-        public object GetMovieTrailer(int id)
-        {
-            var trailer = client.GetMovieTrailers(id);
-            return trailer;
-        }
-
-        [HttpPost]
-        public object GetInTheatres()
+        public object GetNowPlaying() 
         {
             var browser = new ScrapingBrowser();
+            browser.Encoding = System.Text.Encoding.UTF8;
             var html = browser.NavigateToPage(new Uri("http://sinema.mynet.com/vizyondaki-filmler   ")).Html;
             var parsedList = html.CssSelect("div.vizyonListe");
-
             var list = parsedList.Select(div => { return div.ToMovieItem(); }).ToList();
 
+            foreach (MovieItem mi in list) 
+            {
+                var movie = client.SearchMovie(mi.OriginalTitle).Results.ToList().Count > 0 ? client.SearchMovie(mi.OriginalTitle).Results.FirstOrDefault() : null;
+
+                if (movie != null)
+                {
+                    mi.ImdbScore = movie.VoteAverage.ToString();
+                    mi.TheMovieDbID = movie.Id;
+                }
+            }
+
+            System.IO.TextWriter tw = new StreamWriter(@"C:\Users\Kübra\Desktop\Text.txt");
+            var data = JsonConvert.SerializeObject(list);
+            tw.Write(data);
+            tw.Flush();
+            tw.Close();
             return list;
         }
-
-
     }
 }
