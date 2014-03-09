@@ -44,9 +44,11 @@ namespace Popcorn.Controllers
             var html = browser.NavigateToPage(new Uri("http://sinema.mynet.com/vizyondaki-filmler   ")).Html;
             var parsedList = html.CssSelect("div.vizyonListe");
             var list = parsedList.Select(div => { return div.ToMovieItem(); }).ToList();
+            int count = 1;
 
             foreach (MovieItem mi in list) 
             {
+                mi.PopcornID = count;
                 var movie = client.SearchMovie(mi.OriginalTitle).Results.ToList().Count > 0 ? client.SearchMovie(mi.OriginalTitle).Results.FirstOrDefault() : null;
 
                 if (movie != null)
@@ -54,6 +56,7 @@ namespace Popcorn.Controllers
                     mi.ImdbScore = movie.VoteAverage.ToString();
                     mi.TheMovieDbID = movie.Id;
                 }
+                count++;
             }
 
             System.IO.TextWriter tw = new StreamWriter(@"C:\Users\Kübra\Desktop\Text.txt");

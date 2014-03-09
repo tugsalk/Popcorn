@@ -8,6 +8,7 @@ namespace Popcorn.Models
 {
     public class MovieItem
     {
+        public int PopcornID { get; set; }
         public int TheMovieDbID { get; set; }
         public string TurkishTitle { get; set; }
         public string OriginalTitle { get; set; }
